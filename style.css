@@ -1,0 +1,64 @@
+#wordchimp_logo {
+	display:block;
+	clear:both;
+}
+
+#wordchimp_container {
+	padding: 0 .6em;
+	margin: 5px 15px 2px;
+	min-height:400px;
+}
+
+#wordchimp_container .mailchimp_connected {
+	position:absolute;
+	width:100px;
+	height:138px;
+	right:50px;
+	background-image:url(./images/mailchimp_connected.png);
+	background-position:top center;
+	background-repeat:no-repeat;
+}
+
+#wordchimp_contents {
+	min-height:400px;
+	padding: .6em;
+	margin: 15px 15px 2px;
+	background-color:#fff;
+	border: 1px solid #ccc;
+}
+
+#wordchimp_footer {
+	padding: .6em;
+	margin: 15px 15px 2px;
+	background-color:#242424;
+	color:#fff;
+	text-align:center;
+}
+
+.wordchimp_form_table th {
+	text-align:left;
+}
+
+#wordchimp_contents input[type=text] {
+	width:500px;
+}
+
+#wordchimp_contents textarea {
+	width:700px;
+	height:300px;
+}
+
+.wordchimp_notice {
+	font-size:12px;
+	color:#008adb;
+}
+
+.wordchimp_success {
+	display:block;
+	padding:5px;
+	font-weight:bold;
+	background-color:#dfffe4;
+	border: 1px solid #157a2c;
+	color:#157a2c;
+	text-align:center;
+}

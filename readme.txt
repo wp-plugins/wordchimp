@@ -1,4 +1,4 @@
-=== Plugin Name ===
+=== WordChimp ===
 Contributors: hudsonfoo
 Donate link: http://hudsoncs.com/hudsoncs-news/projects/wordchimp/
 Tags: mailing list, newsletter, mailchimp

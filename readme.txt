@@ -4,7 +4,7 @@ Donate link: http://hudsoncs.com/hudsoncs-news/projects/wordchimp/
 Tags: mailing list, newsletter, mailchimp
 Requires at least: 2.7
 Tested up to: 3.1
-Stable tag: 4.3
+Stable tag: 1.2
 
 Create and send MailChimp campaigns by selecting Wordpress posts directly from the Wordpress administrator backend.
 
@@ -24,6 +24,8 @@ If you love MailChimp and Wordpress, you're in luck. Now you can create and send
 For screen shots, check out http://hudsoncs.com/projects/wordchimp/
 
 == Changelog ==
+= 1.2 =
+* Fixed WordChimp version. Whoops!
 
 = 1.1 =
 * Modified MailChimp API class/function names to help eliminate class name collision for those with more than one plugin using MailChimp API. Avoided using namespaces specifically to ensure that most of us with older versions of PHP could still roll with WordChimp.

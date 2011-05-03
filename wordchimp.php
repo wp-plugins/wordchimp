@@ -1,9 +1,9 @@
 <?php
 /*
 Plugin Name: WordChimp
-Plugin URI: http://hudsoncs.com/
+Plugin URI: http://hudsoncs.com/projects/wordchimp/
 Description: Allows you to easily select and send a group of posts as a MailChimp campaign
-Version: 1.1
+Version: 1.2
 Author: David Hudson
 Author URI: http://hudsoncs.com/
 License: GPL

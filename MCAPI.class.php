@@ -1,6 +1,6 @@
 <?php
 
-class MCAPI {
+class MCAPI_WordChimp {
     var $version = "1.3";
     var $errorMessage;
     var $errorCode;
@@ -36,7 +36,7 @@ class MCAPI {
      * @param string $apikey Your MailChimp apikey
      * @param string $secure Whether or not this should use a secure connection
      */
-    function MCAPI($apikey, $secure=false) {
+    function MCAPI_WordChimp($apikey, $secure=false) {
         $this->secure = $secure;
         $this->apiUrl = parse_url("http://api.mailchimp.com/" . $this->version . "/?output=php");
         $this->api_key = $apikey;

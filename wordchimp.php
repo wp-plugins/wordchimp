@@ -162,7 +162,7 @@ EOF;
 			if (get_option( 'mailchimp_api_key' ) == "") {
 				echo "<p class='wordchimp_error'>You must enter your MailChimp API key in the settings page before you can continue. " . $random['whoops'][rand(0, count($random['whoops'])-1)] . "</p>";
 			} else {
-				$api = new MCAPI(get_option( 'mailchimp_api_key') );
+				$api = new MCAPI_WordChimp(get_option( 'mailchimp_api_key') );
 
 				$retval = $api->lists();
 
@@ -250,7 +250,7 @@ EOF;
 				echo "<p class='wordchimp_error'>You must enter your MailChimp API key in the settings page before you can continue. " . $random['whoops'][rand(0, count($random['whoops'])-1)] . "</p>";
 			} else {
 				// Build the campaign
-				$api = new MCAPI(get_option( 'mailchimp_api_key' ));
+				$api = new MCAPI_WordChimp(get_option( 'mailchimp_api_key' ));
 
 				$type = 'regular';
 
@@ -367,7 +367,7 @@ EOF;
 		break;
 		
 		case "step5":
-			$api = new MCAPI(get_option( 'mailchimp_api_key' ));
+			$api = new MCAPI_WordChimp(get_option( 'mailchimp_api_key' ));
 			$emails = explode(",", $_POST['mailchimp_test_emails']);
 			$campaignId = $_POST['mailchimp_campaign_id'];
 			
@@ -398,7 +398,7 @@ EOF;
 		break;
 		
 		case "step6":
-			$api = new MCAPI(get_option( 'mailchimp_api_key' ));
+			$api = new MCAPI_WordChimp(get_option( 'mailchimp_api_key' ));
 			$campaignId = $_POST['mailchimp_campaign_id'];
 			$emails = explode(",", $_POST['mailchimp_test_emails']);
 			

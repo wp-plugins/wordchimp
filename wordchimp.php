@@ -3,7 +3,7 @@
 Plugin Name: WordChimp
 Plugin URI: http://hudsoncs.com/projects/wordchimp/
 Description: Allows you to easily select and send a group of posts as a MailChimp campaign
-Version: 1.2
+Version: 1.3
 Author: David Hudson
 Author URI: http://hudsoncs.com/
 License: GPL
@@ -52,6 +52,8 @@ function wordchimp_admin_init() {
 function register_wordchimp_settings() {
 	register_setting( 'wordchimp_options_group', 'mailchimp_api_key' );
 	register_setting( 'wordchimp_options_group', 'google_analytics_key' );
+	register_setting( 'wordchimp_options_group', 'wordchimp_campaign_from_name' );
+	register_setting( 'wordchimp_options_group', 'wordchimp_campaign_from_email' );
 	register_setting( 'wordchimp_options_group', 'wordchimp_logo_url' );
 	register_setting( 'wordchimp_options_group', 'wordchimp_strip_images' );
 	register_setting( 'wordchimp_options_group', 'wordchimp_show_author' );
@@ -91,6 +93,8 @@ function wordchimp_settings_page() {
 	
 	$mailchimp_api_key = get_option( 'mailchimp_api_key' );
 	$google_analytics_key = get_option( 'google_analytics_key' );
+	$wordchimp_campaign_from_name = get_option( 'wordchimp_campaign_from_name' );
+	$wordchimp_campaign_from_email = get_option( 'wordchimp_campaign_from_email' );
 	$wordchimp_logo_url = get_option( 'wordchimp_logo_url' );
 	$wordchimp_template = get_option( 'wordchimp_template' ) == "" ? file_get_contents(WP_PLUGIN_DIR . '/wordchimp/inc/campaign_template/default.tpl') : get_option( 'wordchimp_template' );
 	$wordchimp_strip_images_checked = get_option( 'wordchimp_strip_images' ) == true ? 'CHECKED' : '';
@@ -103,17 +107,12 @@ function wordchimp_settings_page() {
 	}
 	echo <<<EOF
 		<h3>APIs</h3>
-		<table class='wordchimp_form_table'>
-			<tr valign='top'>
-				<th scope='row'>MailChimp API Key</th>
-				<td><input type='text' name='mailchimp_api_key' value='{$mailchimp_api_key}' /></td>
-			</tr>
-			<tr valign='top'>
-				<th scope='row'>Google Analytics Key</th>
-				<td><input type='text' name='google_analytics_key' value='{$google_analytics_key}' /></td>
-			</tr>
-		</table>
+		<label><strong>MailChimp API Key</strong><br /><input type='text' name='mailchimp_api_key' value='{$mailchimp_api_key}' /></label><br/><br/>
+		<label><strong>Google Analytics Key</strong><br /><input type='text' name='google_analytics_key' value='{$google_analytics_key}' /></label><br /><br />
+
 		<h3>Options</h3>
+		<label><strong>Default From Name:</strong><br /><input type='text' name='wordchimp_campaign_from_name' value='{$wordchimp_campaign_from_name}' /></label><br /><br />
+		<label><strong>Default From E-mail:</strong><br /><input type='text' name='wordchimp_campaign_from_email' value='{$wordchimp_campaign_from_email}' /></label><br /><br />
 		<label><strong>Logo URL (includes http):</strong><br /><input type='text' name='wordchimp_logo_url' value='{$wordchimp_logo_url}' /></label><br /><br />
 		<label><input type='checkbox' name='wordchimp_strip_images' value='true' {$wordchimp_strip_images_checked} /> Strip images from posts (Fixes some compatibility issues with posts that have very large images)</label><br /><br />
 		<label><input type='checkbox' name='wordchimp_show_author' value='true' {$wordchimp_show_author_checked} /> Show author inside of post</label><br /><br />
@@ -211,6 +210,8 @@ EOF;
 				echo "<span class='wordchimp_notice'>Please enter the campaign information.</span><br /><br />";
 				
 				// Setup campaign options
+				$wordchimp_campaign_from_email = htmlspecialchars(get_option( 'wordchimp_campaign_from_email' ));
+				$wordchimp_campaign_from_name = htmlspecialchars(get_option( 'wordchimp_campaign_from_name' ));
 				echo "
 				<h3>Campaign Info</h3>
 				<table class='wordchimp_form_table'>
@@ -224,17 +225,17 @@ EOF;
 					</tr>
 					<tr valign='top'>
 						<th scope='row'>From Email</th>
-						<td><input type='text' name='wordchimp_campaign_from_email' /></td>
+						<td><input type='text' name='wordchimp_campaign_from_email' value='{$wordchimp_campaign_from_email}' /></td>
 					</tr>
 					<tr valign='top'>
 						<th scope='row'>From Name</th>
-						<td><input type='text' name='wordchimp_campaign_from_name' /></td>
+						<td><input type='text' name='wordchimp_campaign_from_name' value='{$wordchimp_campaign_from_name}' /></td>
 					</tr>
 				</table>
 				<h3>Campaign Tracking</h3>
-				<label><input type='checkbox' name='wordchimp_campaign_track_opens' value='true' /> Track number of times email was opened</label><br />
-				<label><input type='checkbox' name='wordchimp_campaign_track_html_clicks' value='true' /> Track number of times a user clicked an HTML link</label><br />
-				<label><input type='checkbox' name='wordchimp_campaign_track_text_clicks' value='true' /> Track number of times a user clicked a text link</label>";
+				<label><input type='checkbox' name='wordchimp_campaign_track_opens' value='true' checked /> Track number of times email was opened</label><br />
+				<label><input type='checkbox' name='wordchimp_campaign_track_html_clicks' value='true' checked /> Track number of times a user clicked an HTML link</label><br />
+				<label><input type='checkbox' name='wordchimp_campaign_track_text_clicks' value='true' checked /> Track number of times a user clicked a text link</label>";
 				
 				echo <<<EOF
 					<p class="submit">
@@ -305,10 +306,10 @@ EOF;
 						$post['post_content'] = preg_replace("/<img[^>]+\>/i", "", $post['post_content']);
 					}
 					
-					$content['html'] .= $post['post_content'] . "<br /><hr /><br />";
+					$content['html'] .= strip_shortcodes($post['post_content']) . "<br /><hr /><br />";
 					
 					// Setup text email
-					$content['text'] .= strip_tags($post['post_title']) . "\r\n";
+					$content['text'] .= strip_tags(strip_shortcodes($post['post_title'])) . "\r\n";
 
 					if (get_option( 'wordchimp_show_author')) {
 						$content['text'] .= "Authored by: {$post['display_name']}\r\n";

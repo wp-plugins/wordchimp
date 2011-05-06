@@ -3,7 +3,7 @@
 Plugin Name: WordChimp
 Plugin URI: http://hudsoncs.com/projects/wordchimp/
 Description: Allows you to easily select and send a group of posts as a MailChimp campaign
-Version: 1.3
+Version: 1.4
 Author: David Hudson
 Author URI: http://hudsoncs.com/
 License: GPL
@@ -43,6 +43,9 @@ add_action('admin_menu', 'wordchimp_menu');
 // Initialize admin page styles
 add_action( 'admin_init', 'wordchimp_admin_init' );
 
+// Setup ajax calls
+add_action( 'wp_ajax_wordchimp_campaign_preview', 'wordchimp_campaign_preview' );
+
 function wordchimp_admin_init() {
 	wp_register_style( 'wordchimpStyle', '/wp-content/plugins/wordchimp/style.css' );
 	wp_register_script( 'wordchimpjQuery', 'https://ajax.googleapis.com/ajax/libs/jquery/1.5.0/jquery.min.js' );
@@ -73,14 +76,125 @@ function wordchimp_admin_scripts() {
 
 function wordchimp_menu() {
 	$page = add_menu_page('WordChimp', 'WordChimp', 'manage_options', 'wordchimp', 'wordchimp_dashboard');
+	$campaigns_page = add_submenu_page('wordchimp', 'Campaign Stats', 'Campaign Stats', 'manage_options', 'wordchimp-campaigns', 'wordchimp_campaigns_page');
 	$settings_page = add_submenu_page('options-general.php', 'WordChimp Settings', 'WordChimp', 'manage_options', __FILE__, 'wordchimp_settings_page');
 	
 	add_action( 'admin_print_styles-' . $page, 'wordchimp_admin_styles' );
 	add_action( 'admin_print_scripts-' . $page, 'wordchimp_admin_scripts' );
 	
+	add_action( 'admin_print_styles-' . $campaigns_page, 'wordchimp_admin_styles' );
+	add_action( 'admin_print_scripts-' . $campaigns_page, 'wordchimp_admin_scripts');
+	
 	add_action( 'admin_print_styles-' . $settings_page, 'wordchimp_admin_styles' );
 	add_action( 'admin_print_scripts-' . $settings_page, 'wordchimp_admin_scripts' );
+	
 	add_action( 'admin_init', 'register_wordchimp_settings' );
+}
+
+add_filter('plugin_action_links', 'wordchimp_plugin_action_links', 10, 2);
+
+function wordchimp_plugin_action_links($links, $file) {
+    static $this_plugin;
+
+    if (!$this_plugin) {
+        $this_plugin = plugin_basename(__FILE__);
+    }
+
+    if ($file == $this_plugin) {
+        $settings_link = '<a href="' . get_bloginfo('wpurl') . '/wp-admin/admin.php?page=wordchimp/wordchimp.php">Settings</a>';
+        array_unshift($links, $settings_link);
+    }
+
+    return $links;
+}
+
+function wordchimp_campaign_preview() {
+	global $random;
+	global $wpdb;
+	
+	$api = new MCAPI_WordChimp(get_option( 'mailchimp_api_key' ));
+	
+	$campaignContent = $api->campaignContent($_GET['cid']);
+	
+	switch ($_GET['type']) {
+		default:
+		case "html":
+			echo $campaignContent['html'];
+		break;
+		
+		case "text":
+			echo "<html><body><pre>{$campaignContent['text']}</pre></body></html>";
+		break;
+	}
+	die();
+}
+
+function wordchimp_campaigns_page() {
+	global $random;
+	global $wpdb;
+	
+	echo file_get_contents(WP_PLUGIN_DIR . '/wordchimp/inc/template/adm_header.tpl');
+	echo "<h3>Campaigns</h3>";
+	echo "<p class='wordchimp_notice'>Shows information and statistics for all sent campaigns (generated through WordChimp or otherwise)</p>";
+	if (get_option( 'mailchimp_api_key' ) == "") {
+		echo "<p class='wordchimp_error'>You must enter your MailChimp API key in the settings page before you can continue. " . $random['whoops'][rand(0, count($random['whoops'])-1)] . "</p>";
+	} else {
+		$api = new MCAPI_WordChimp(get_option( 'mailchimp_api_key' ));
+
+		$campaigns = $api->campaigns();
+
+		if ($api->errorCode){
+			echo "<p class='wordchimp_error'>Sorry, we were unable to get a list of your campaigns. " . $random['whoops'][rand(0, count($random['whoops'])-1)] . " {$api->errorCode} {$api->errorMessage}</p>";
+		} elseif (sizeof($campaigns['data']) <= 0) {
+			echo "<p class='wordchimp_error'>Sorry, there are no campaigns available that have been sent. Please send a campaign and come on back to take stats for a spin!</p>";
+		} else {
+			echo <<<EOF
+				<table class='wordchimp_campaigns_analytics_table'>
+					<tbody>
+EOF;
+			foreach ($campaigns['data'] as $campaign) {
+				if ($campaign['status'] == 'sent') {
+					$stats = $api->campaignStats($campaign['id']);
+
+					if ($api->errorCode) {
+						echo "<p class='wordchimp_error'>Sorry, we were unable to get analytics for a campaign. " . $random['whoops'][rand(0, count($random['whoops'])-1)] . " {$api->errorCode} {$api->errorMessage}</p>";
+					} else {
+						$wordchimp_timestamp_format = get_option( 'wordchimp_timestamp_format' ) == '' ? 'm/d/Y g:ia' : get_option( 'wordchimp_timestamp_format' );
+						
+						$campaign['send_time'] = date($wordchimp_timestamp_format, strtotime($campaign['send_time']));
+						$stats['last_open'] = $stats['last_open'] != '' ? date($wordchimp_timestamp_format, strtotime($stats['last_open'])) : 'NEVA';
+						$stats['last_click'] = $stats['last_click'] != '' ? date($wordchimp_timestamp_format, strtotime($stats['last_click'])) : 'NEVA';
+
+						echo "
+							<tr class='wordchimp_campaign_separate'>
+								<td colspan='6'></td>
+							</tr>
+							<tr>
+								<td colspan='6' class='wordchimp_campaign_title'><a href='" . get_bloginfo('wpurl') . "/wp-admin/admin-ajax.php?action=wordchimp_campaign_preview&cid={$campaign['id']}' target='_blank'>{$campaign['title']}</a></td>
+							</tr>
+							<tr>
+								<td><span class='wordchimp_campaign_data_title'>Sent on:</span><br /><span class='wordchimp_campaign_data_value'>{$campaign['send_time']}</span></td>
+								<td><span class='wordchimp_campaign_data_title'>Emails sent:</span><br /><span class='wordchimp_campaign_data_value'>{$campaign['emails_sent']}</span></td>
+								<td><span class='wordchimp_campaign_data_title'>Hard bounces:</span><br /><span class='wordchimp_campaign_data_value'>{$stats['hard_bounces']}</span></td>
+								<td><span class='wordchimp_campaign_data_title'>Soft bounces:</span><br /><span class='wordchimp_campaign_data_value'>{$stats['soft_bounces']}</span></td>
+								<td><span class='wordchimp_campaign_data_title'>Unsubscribes:</span><br /><span class='wordchimp_campaign_data_value'>{$stats['unsubscribes']}</span></td>
+								<td><span class='wordchimp_campaign_data_title'>Forwards:</span><br /><span class='wordchimp_campaign_data_value'>{$stats['forwards']}</span></td>
+							</tr>
+							<tr>
+								<td><span class='wordchimp_campaign_data_title'>Forwards opens:</span><br /><span class='wordchimp_campaign_data_value'>{$stats['forwards_opens']}</span></td>
+								<td><span class='wordchimp_campaign_data_title'>Opens:</span><br /><span class='wordchimp_campaign_data_value'>{$stats['opens']}</span></td>
+								<td><span class='wordchimp_campaign_data_title'>Last open:</span><br /><span class='wordchimp_campaign_data_value'>{$stats['last_open']}</span></td>
+								<td><span class='wordchimp_campaign_data_title'>Clicks:</span><br /><span class='wordchimp_campaign_data_value'>{$stats['clicks']}</span></td>
+								<td><span class='wordchimp_campaign_data_title'>Users who clicked:</span><br /><span class='wordchimp_campaign_data_value'>{$stats['users_who_clicked']}</span></td>
+								<td><span class='wordchimp_campaign_data_title'>Last click:</span><br /><span class='wordchimp_campaign_data_value'>{$stats['last_click']}</span></td>
+							</tr>";
+					}
+				}
+			}
+			echo "</tbody></table>";
+		}
+	}
+	echo file_get_contents(WP_PLUGIN_DIR . '/wordchimp/inc/template/adm_footer.tpl');
 }
 
 function wordchimp_settings_page() {
@@ -118,7 +232,8 @@ function wordchimp_settings_page() {
 		<label><input type='checkbox' name='wordchimp_show_author' value='true' {$wordchimp_show_author_checked} /> Show author inside of post</label><br /><br />
 		<label><input type='checkbox' name='wordchimp_show_timestamp' value='true' {$wordchimp_show_timestamp_checked} /> Show post created date/time inside of post</label><br /><br />
 		<label><strong>Date/Time Format:</strong><br /><input type='text' name='wordchimp_timestamp_format' value='{$wordchimp_timestamp_format}' /></label><br /><br />
-		<label><strong>E-mail Template</strong> <small>(NOTE: Only edit if you know what you're doing)</small></label><br /><br />
+		<label><strong>E-mail Template</strong> <small>(NOTE: Only edit if you know what you're doing)</small></label><br />
+		<p class='wordchimp_notice'>For now, templates are pretty simple. The default template comes from MailChimp's free template package. Any template will do, just be sure to add the shortcode: <strong>[[loop_contents]]</strong> wherever you want the posts to show up.</p>
 		<textarea name='wordchimp_template'>{$wordchimp_template}</textarea>
 		<p class="submit">
 			<input type="submit" class="button-primary" value="Save Changes" />
@@ -347,19 +462,24 @@ EOF;
 				} else {
 					echo <<<EOF
 					<p class='wordchimp_success'>Success! Your campaign was created. {$random['compliment'][rand(0, count($random['compliment'])-1)]} Now what?</p>
+EOF;
+					echo "<a href='" . get_bloginfo('wpurl') . "/wp-admin/admin-ajax.php?action=wordchimp_campaign_preview&cid={$campaignId}' target='_blank'>Preview Campaign in Browser</a><br /><br />";
+					echo <<<EOF
+					<h3>Send a test?</h3>
 					<form method='post'>
 						<input type='hidden' name='wp_cmd' value='step5' />
 						<input type='hidden' name='mailchimp_campaign_id' value='{$campaignId}' />
-						<input type='text' name='mailchimp_test_emails' value='test@email.com, test@otheremail.com' />
+						<input type='text' name='mailchimp_test_emails' value='test@email.com, test@otheremail.com' onClick="this.value='';" />
 						<p class="submit">
 							<input type="submit" class="button-primary" value="Send Test" />
 						</p>
 					</form>
+					<h3>Send fo' real?</h3>
 					<form method='post'>
 						<input type='hidden' name='wp_cmd' value='step6' />
 						<input type='hidden' name='mailchimp_campaign_id' value='{$campaignId}' />
 						<p class="submit">
-							<input type="submit" class="button-primary" value="Send Fo' Real" />
+							<input type="submit" class="button-primary" value="Send Fo' Real!" />
 						</p>
 					</form>
 EOF;
@@ -379,23 +499,28 @@ EOF;
 			} else {
 				echo "<span class='wordchimp_notice'>Success! A test has been sent to the e-mail addresses you provided. " . $random['compliment'][rand(0, count($random['compliment']) -1)] . "</span><br /><br />";
 			}
+			
+			echo "<a href='" . get_bloginfo('wpurl') . "/wp-admin/admin-ajax.php?action=wordchimp_campaign_preview&cid={$campaignId}' target='_blank'>Preview Campaign in Browser</a><br /><br />";
 			echo <<<EOF
+			<h3>Send a test?</h3>
 			<form method='post'>
 				<input type='hidden' name='wp_cmd' value='step5' />
 				<input type='hidden' name='mailchimp_campaign_id' value='{$campaignId}' />
-				<input type='text' name='mailchimp_test_emails' value='test@email.com, test@otheremail.com' />
+				<input type='text' name='mailchimp_test_emails' value='test@email.com, test@otheremail.com' onClick="this.value='';" />
 				<p class="submit">
 					<input type="submit" class="button-primary" value="Send Test" />
 				</p>
 			</form>
+			<h3>Send fo' real?</h3>
 			<form method='post'>
 				<input type='hidden' name='wp_cmd' value='step6' />
 				<input type='hidden' name='mailchimp_campaign_id' value='{$campaignId}' />
 				<p class="submit">
-					<input type="submit" class="button-primary" value="Send Fo' Real" />
+					<input type="submit" class="button-primary" value="Send Fo' Real!" />
 				</p>
 			</form>
 EOF;
+
 		break;
 		
 		case "step6":

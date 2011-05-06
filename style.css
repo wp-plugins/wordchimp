@@ -35,6 +35,35 @@
 	text-align:center;
 }
 
+.wordchimp_campaigns_analytics_table {
+	width:100%;
+}
+.wordchimp_campaigns_analytics_table campaign {
+	border-top:1px solid #000;
+	border-bottom:1px solid #000;
+}
+.wordchimp_campaigns_analytics_table .wordchimp_campaign_data_title {
+	font-size:12px;
+	color:#242424;
+}
+.wordchimp_campaigns_analytics_table .wordchimp_campaign_data_title {
+	font-size:10px;
+	font-weight:bold;
+}
+.wordchimp_campaigns_analytics_table td.wordchimp_campaign_title {
+	font-weight:bold;
+	font-size:16px;
+	color:#0a0a0a;
+}
+.wordchimp_campaigns_analytics_table td {
+	padding:3px;
+	background-color: #f4f4f4;
+}
+.wordchimp_campaigns_analytics_table tr.wordchimp_campaign_separate td {
+	height:15px;
+	background-color:#fff;
+}
+
 .wordchimp_form_table th {
 	text-align:left;
 }
@@ -51,6 +80,16 @@
 .wordchimp_notice {
 	font-size:12px;
 	color:#008adb;
+}
+
+.wordchimp_error {
+	display:block;
+	padding:5px;
+	font-weight:bold;
+	background-color:#ffe9e9;
+	border: 1px solid #ff0000;
+	color:red;
+	text-align:center;
 }
 
 .wordchimp_success {

@@ -3,8 +3,8 @@ Contributors: hudsonfoo
 Donate link: http://hudsoncs.com/hudsoncs-news/projects/wordchimp/
 Tags: mailing list, newsletter, mailchimp
 Requires at least: 2.7
-Tested up to: 3.1
-Stable tag: 1.4
+Tested up to: 3.1.3
+Stable tag: 1.6
 
 Create and send MailChimp campaigns by selecting Wordpress posts directly from the Wordpress administrator backend.
 
@@ -24,6 +24,12 @@ If you love MailChimp and Wordpress, you're in luck. Now you can create and send
 For screen shots, check out http://hudsoncs.com/projects/wordchimp/
 
 == Changelog ==
+= 1.6 =
+* Added ability to change security levels required to access WordChimp (See WordPress Capabilities for more information. Thanks Rabab).
+* Added ability to use a post excerpt instead of the whole post content. (Thanks Guy Whose Name Escapes Me)
+* Removed unnecessary Google Analytics Key setting (doh!)
+* Set shortcodes to expand instead of being stripped right before being sent. (Nice one @CPilko)
+
 = 1.4 =
 * Added campaign statistics. Thanks @meerblickzimmer!
 * Added campaign preview.

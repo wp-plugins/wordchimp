@@ -3,7 +3,7 @@
 Plugin Name: WordChimp
 Plugin URI: http://hudsoncs.com/projects/wordchimp/
 Description: Allows you to easily select and send a group of posts as a MailChimp campaign
-Version: 1.4
+Version: 1.6
 Author: David Hudson
 Author URI: http://hudsoncs.com/
 License: GPL
@@ -54,7 +54,6 @@ function wordchimp_admin_init() {
 
 function register_wordchimp_settings() {
 	register_setting( 'wordchimp_options_group', 'mailchimp_api_key' );
-	register_setting( 'wordchimp_options_group', 'google_analytics_key' );
 	register_setting( 'wordchimp_options_group', 'wordchimp_campaign_from_name' );
 	register_setting( 'wordchimp_options_group', 'wordchimp_campaign_from_email' );
 	register_setting( 'wordchimp_options_group', 'wordchimp_logo_url' );
@@ -63,6 +62,10 @@ function register_wordchimp_settings() {
 	register_setting( 'wordchimp_options_group', 'wordchimp_show_timestamp' );
 	register_setting( 'wordchimp_options_group', 'wordchimp_timestamp_format' );
 	register_setting( 'wordchimp_options_group', 'wordchimp_template' );
+	register_setting( 'wordchimp_options_group', 'wordchimp_use_excerpt' );
+	register_setting( 'wordchimp_options_group', 'wordchimp_page_capability' );
+	register_setting( 'wordchimp_options_group', 'wordchimp_campaigns_capability' );
+	register_setting( 'wordchimp_options_group', 'wordchimp_settings_capability' );
 }
 
 function wordchimp_admin_styles() {
@@ -75,9 +78,13 @@ function wordchimp_admin_scripts() {
 }
 
 function wordchimp_menu() {
-	$page = add_menu_page('WordChimp', 'WordChimp', 'manage_options', 'wordchimp', 'wordchimp_dashboard');
-	$campaigns_page = add_submenu_page('wordchimp', 'Campaign Stats', 'Campaign Stats', 'manage_options', 'wordchimp-campaigns', 'wordchimp_campaigns_page');
-	$settings_page = add_submenu_page('options-general.php', 'WordChimp Settings', 'WordChimp', 'manage_options', __FILE__, 'wordchimp_settings_page');
+	$page_capability = get_option( 'wordchimp_page_capability' ) == '' ? 'manage_options' : get_option( 'wordchimp_page_capability' );
+	$campaigns_capability = get_option( 'wordchimp_campaigns_capability' ) == '' ? 'manage_options' : get_option( 'wordchimp_campaigns_capability' );
+	$settings_capability = get_option( 'wordchimp_settings_capability' ) == '' ? 'manage_options' : get_option( 'wordchimp_settings_capability' );
+
+	$page = add_menu_page('WordChimp', 'WordChimp', $page_capability, 'wordchimp', 'wordchimp_dashboard');
+	$campaigns_page = add_submenu_page('wordchimp', 'Campaign Stats', 'Campaign Stats', $campaigns_capability, 'wordchimp-campaigns', 'wordchimp_campaigns_page');
+	$settings_page = add_submenu_page('options-general.php', 'WordChimp Settings', 'WordChimp', $settings_capability, __FILE__, 'wordchimp_settings_page');
 	
 	add_action( 'admin_print_styles-' . $page, 'wordchimp_admin_styles' );
 	add_action( 'admin_print_scripts-' . $page, 'wordchimp_admin_scripts' );
@@ -206,7 +213,6 @@ function wordchimp_settings_page() {
 	do_settings_fields( 'wordchimp_settings_page', 'wordchimp_options_group' );
 	
 	$mailchimp_api_key = get_option( 'mailchimp_api_key' );
-	$google_analytics_key = get_option( 'google_analytics_key' );
 	$wordchimp_campaign_from_name = get_option( 'wordchimp_campaign_from_name' );
 	$wordchimp_campaign_from_email = get_option( 'wordchimp_campaign_from_email' );
 	$wordchimp_logo_url = get_option( 'wordchimp_logo_url' );
@@ -215,6 +221,11 @@ function wordchimp_settings_page() {
 	$wordchimp_show_author_checked = get_option( 'wordchimp_show_author' ) == true ? 'CHECKED' : '';
 	$wordchimp_show_timestamp_checked = get_option( 'wordchimp_show_timestamp' ) == true ? 'CHECKED' : '';
 	$wordchimp_timestamp_format = get_option( 'wordchimp_timestamp_format' ) == '' ? 'm/d/Y g:ia' : get_option( 'wordchimp_timestamp_format' );
+	$wordchimp_use_excerpt_checked = get_option( 'wordchimp_use_excerpt' ) == true ? 'CHECKED' : '';
+	
+	$wordchimp_page_capability = get_option( 'wordchimp_page_capability' ) == '' ? 'manage_options' : get_option( 'wordchimp_page_capability' );
+	$wordchimp_campaigns_capability = get_option( 'wordchimp_campaigns_capability' ) == '' ? 'manage_options' : get_option( 'wordchimp_campaigns_capability' );
+	$wordchimp_settings_capability = get_option( 'wordchimp_settings_capability' ) == '' ? 'manage_options' : get_option( 'wordchimp_settings_capability' );
 	
 	if ($_GET['settings-updated'] == 'true') {
 		echo "<p class='wordchimp_success'>Success! Your settings have been updated. " . $random['compliment'][rand(0, count($random['compliment'])-1)] . "</p>";
@@ -222,12 +233,331 @@ function wordchimp_settings_page() {
 	echo <<<EOF
 		<h3>APIs</h3>
 		<label><strong>MailChimp API Key</strong><br /><input type='text' name='mailchimp_api_key' value='{$mailchimp_api_key}' /></label><br/><br/>
-		<label><strong>Google Analytics Key</strong><br /><input type='text' name='google_analytics_key' value='{$google_analytics_key}' /></label><br /><br />
-
+		<h3>Security</h3>
+		<small>Security is based on WordPress 'capabilities'. The 'manage_option' capability is the default and if you don't know what this is or how this works, please do not change it! For more information, visit <a href='http://codex.wordpress.org/Roles_and_Capabilities' target='_blank'>http://codex.wordpress.org/Roles_and_Capabilities</a>.</small><br />
+		<label><strong>Create Campaign Through WordChimp:</strong><br />
+			<select name='wordchimp_page_capability'>
+				<option>{$wordchimp_page_capability}</option>
+				<option disabled>-----</option>
+				<option disabled value=''>Super Admin</option>
+				<option>manage_network</option>
+				<option>manage_sites</option>
+				<option>manage_network_users</option>
+				<option>manage_network_themes</option>
+				<option>manage_network_options</option>
+				<option>unfiltered_html when using Multisite</option>
+				<option disabled value=''>Administrator</option>
+				<option>activate_plugins</option>
+				<option>add_users</option>
+				<option>create_users</option>
+				<option>delete_others_pages</option>
+				<option>delete_others_posts</option>
+				<option>delete_pages</option>
+				<option>delete_plugins</option>
+				<option>delete_posts</option>
+				<option>delete_private_pages</option>
+				<option>delete_private_posts</option>
+				<option>delete_published_pages</option>
+				<option>delete_published_posts</option>
+				<option>delete_themes</option>
+				<option>delete_users</option>
+				<option>edit_dashboard</option>
+				<option>edit_files</option>
+				<option>edit_others_pages</option>
+				<option>edit_others_posts</option>
+				<option>edit_pages</option>
+				<option>edit_plugins</option>
+				<option>edit_posts</option>
+				<option>edit_private_pages</option>
+				<option>edit_private_posts</option>
+				<option>edit_published_pages</option>
+				<option>edit_published_posts</option>
+				<option>edit_theme_options</option>
+				<option>edit_themes</option>
+				<option>edit_users</option>
+				<option>export</option>
+				<option>import</option>
+				<option>install_plugins</option>
+				<option>install_themes</option>
+				<option>list_users</option>
+				<option>manage_categories</option>
+				<option>manage_links</option>
+				<option>manage_options</option>
+				<option>moderate_comments</option>
+				<option>promote_users</option>
+				<option>publish_pages</option>
+				<option>publish_posts</option>
+				<option>read_private_pages</option>
+				<option>read_private_posts</option>
+				<option>read</option>
+				<option>remove_users</option>
+				<option>switch_themes</option>
+				<option>unfiltered_html</option>
+				<option>unfiltered_upload</option>
+				<option>update_core</option>
+				<option>update_plugins</option>
+				<option>update_themes</option>
+				<option>upload_files</option>
+				<option disabled value=''>Editor</option>
+				<option>delete_others_pages</option>
+				<option>delete_others_posts</option>
+				<option>delete_pages</option>
+				<option>delete_posts</option>
+				<option>delete_private_pages</option>
+				<option>delete_private_posts</option>
+				<option>delete_published_pages</option>
+				<option>delete_published_posts</option>
+				<option>edit_others_pages</option>
+				<option>edit_others_posts</option>
+				<option>edit_pages</option>
+				<option>edit_posts</option>
+				<option>edit_private_pages</option>
+				<option>edit_private_posts</option>
+				<option>edit_published_pages</option>
+				<option>edit_published_posts</option>
+				<option>manage_categories</option>
+				<option>manage_links</option>
+				<option>moderate_comments</option>
+				<option>publish_pages</option>
+				<option>publish_posts</option>
+				<option>read</option>
+				<option>read_private_pages</option>
+				<option>read_private_posts</option>
+				<option>unfiltered_html</option>
+				<option>upload_files</option>
+				<option disabled value=''>Author</option>
+				<option>delete_posts</option>
+				<option>delete_published_posts</option>
+				<option>edit_posts</option>
+				<option>edit_published_posts</option>
+				<option>publish_posts</option>
+				<option>read</option>
+				<option>upload_files</option>
+				<option disabled value=''>Contributor</option>
+				<option>delete_posts</option>
+				<option>edit_posts</option>
+				<option>read</option>
+				<option disabled value=''>Subscriber</option>
+				<option>read</option>
+			</select>
+		</label><br /><br />
+		<label><strong>Access Campaign Stats Through WordChimp:</strong><br />
+			<select name='wordchimp_campaigns_capability'>
+				<option>{$wordchimp_campaigns_capability}</option>
+				<option disabled>-----</option>
+				<option disabled value=''>Super Admin</option>
+				<option>manage_network</option>
+				<option>manage_sites</option>
+				<option>manage_network_users</option>
+				<option>manage_network_themes</option>
+				<option>manage_network_options</option>
+				<option>unfiltered_html when using Multisite</option>
+				<option disabled value=''>Administrator</option>
+				<option>activate_plugins</option>
+				<option>add_users</option>
+				<option>create_users</option>
+				<option>delete_others_pages</option>
+				<option>delete_others_posts</option>
+				<option>delete_pages</option>
+				<option>delete_plugins</option>
+				<option>delete_posts</option>
+				<option>delete_private_pages</option>
+				<option>delete_private_posts</option>
+				<option>delete_published_pages</option>
+				<option>delete_published_posts</option>
+				<option>delete_themes</option>
+				<option>delete_users</option>
+				<option>edit_dashboard</option>
+				<option>edit_files</option>
+				<option>edit_others_pages</option>
+				<option>edit_others_posts</option>
+				<option>edit_pages</option>
+				<option>edit_plugins</option>
+				<option>edit_posts</option>
+				<option>edit_private_pages</option>
+				<option>edit_private_posts</option>
+				<option>edit_published_pages</option>
+				<option>edit_published_posts</option>
+				<option>edit_theme_options</option>
+				<option>edit_themes</option>
+				<option>edit_users</option>
+				<option>export</option>
+				<option>import</option>
+				<option>install_plugins</option>
+				<option>install_themes</option>
+				<option>list_users</option>
+				<option>manage_categories</option>
+				<option>manage_links</option>
+				<option>manage_options</option>
+				<option>moderate_comments</option>
+				<option>promote_users</option>
+				<option>publish_pages</option>
+				<option>publish_posts</option>
+				<option>read_private_pages</option>
+				<option>read_private_posts</option>
+				<option>read</option>
+				<option>remove_users</option>
+				<option>switch_themes</option>
+				<option>unfiltered_html</option>
+				<option>unfiltered_upload</option>
+				<option>update_core</option>
+				<option>update_plugins</option>
+				<option>update_themes</option>
+				<option>upload_files</option>
+				<option disabled value=''>Editor</option>
+				<option>delete_others_pages</option>
+				<option>delete_others_posts</option>
+				<option>delete_pages</option>
+				<option>delete_posts</option>
+				<option>delete_private_pages</option>
+				<option>delete_private_posts</option>
+				<option>delete_published_pages</option>
+				<option>delete_published_posts</option>
+				<option>edit_others_pages</option>
+				<option>edit_others_posts</option>
+				<option>edit_pages</option>
+				<option>edit_posts</option>
+				<option>edit_private_pages</option>
+				<option>edit_private_posts</option>
+				<option>edit_published_pages</option>
+				<option>edit_published_posts</option>
+				<option>manage_categories</option>
+				<option>manage_links</option>
+				<option>moderate_comments</option>
+				<option>publish_pages</option>
+				<option>publish_posts</option>
+				<option>read</option>
+				<option>read_private_pages</option>
+				<option>read_private_posts</option>
+				<option>unfiltered_html</option>
+				<option>upload_files</option>
+				<option disabled value=''>Author</option>
+				<option>delete_posts</option>
+				<option>delete_published_posts</option>
+				<option>edit_posts</option>
+				<option>edit_published_posts</option>
+				<option>publish_posts</option>
+				<option>read</option>
+				<option>upload_files</option>
+				<option disabled value=''>Contributor</option>
+				<option>delete_posts</option>
+				<option>edit_posts</option>
+				<option>read</option>
+				<option disabled value=''>Subscriber</option>
+				<option>read</option>
+			</select>
+		</label><br /><br />
+		<label><strong>Access to WordChimp Settings:</strong><br />
+			<select name='wordchimp_settings_capability'>
+				<option>{$wordchimp_settings_capability}</option>
+				<option disabled>-----</option>
+				<option disabled value=''>Super Admin</option>
+				<option>manage_network</option>
+				<option>manage_sites</option>
+				<option>manage_network_users</option>
+				<option>manage_network_themes</option>
+				<option>manage_network_options</option>
+				<option>unfiltered_html when using Multisite</option>
+				<option disabled value=''>Administrator</option>
+				<option>activate_plugins</option>
+				<option>add_users</option>
+				<option>create_users</option>
+				<option>delete_others_pages</option>
+				<option>delete_others_posts</option>
+				<option>delete_pages</option>
+				<option>delete_plugins</option>
+				<option>delete_posts</option>
+				<option>delete_private_pages</option>
+				<option>delete_private_posts</option>
+				<option>delete_published_pages</option>
+				<option>delete_published_posts</option>
+				<option>delete_themes</option>
+				<option>delete_users</option>
+				<option>edit_dashboard</option>
+				<option>edit_files</option>
+				<option>edit_others_pages</option>
+				<option>edit_others_posts</option>
+				<option>edit_pages</option>
+				<option>edit_plugins</option>
+				<option>edit_posts</option>
+				<option>edit_private_pages</option>
+				<option>edit_private_posts</option>
+				<option>edit_published_pages</option>
+				<option>edit_published_posts</option>
+				<option>edit_theme_options</option>
+				<option>edit_themes</option>
+				<option>edit_users</option>
+				<option>export</option>
+				<option>import</option>
+				<option>install_plugins</option>
+				<option>install_themes</option>
+				<option>list_users</option>
+				<option>manage_categories</option>
+				<option>manage_links</option>
+				<option>manage_options</option>
+				<option>moderate_comments</option>
+				<option>promote_users</option>
+				<option>publish_pages</option>
+				<option>publish_posts</option>
+				<option>read_private_pages</option>
+				<option>read_private_posts</option>
+				<option>read</option>
+				<option>remove_users</option>
+				<option>switch_themes</option>
+				<option>unfiltered_html</option>
+				<option>unfiltered_upload</option>
+				<option>update_core</option>
+				<option>update_plugins</option>
+				<option>update_themes</option>
+				<option>upload_files</option>
+				<option disabled value=''>Editor</option>
+				<option>delete_others_pages</option>
+				<option>delete_others_posts</option>
+				<option>delete_pages</option>
+				<option>delete_posts</option>
+				<option>delete_private_pages</option>
+				<option>delete_private_posts</option>
+				<option>delete_published_pages</option>
+				<option>delete_published_posts</option>
+				<option>edit_others_pages</option>
+				<option>edit_others_posts</option>
+				<option>edit_pages</option>
+				<option>edit_posts</option>
+				<option>edit_private_pages</option>
+				<option>edit_private_posts</option>
+				<option>edit_published_pages</option>
+				<option>edit_published_posts</option>
+				<option>manage_categories</option>
+				<option>manage_links</option>
+				<option>moderate_comments</option>
+				<option>publish_pages</option>
+				<option>publish_posts</option>
+				<option>read</option>
+				<option>read_private_pages</option>
+				<option>read_private_posts</option>
+				<option>unfiltered_html</option>
+				<option>upload_files</option>
+				<option disabled value=''>Author</option>
+				<option>delete_posts</option>
+				<option>delete_published_posts</option>
+				<option>edit_posts</option>
+				<option>edit_published_posts</option>
+				<option>publish_posts</option>
+				<option>read</option>
+				<option>upload_files</option>
+				<option disabled value=''>Contributor</option>
+				<option>delete_posts</option>
+				<option>edit_posts</option>
+				<option>read</option>
+				<option disabled value=''>Subscriber</option>
+				<option>read</option>
+			</select>
+		</label><br /><br />
 		<h3>Options</h3>
 		<label><strong>Default From Name:</strong><br /><input type='text' name='wordchimp_campaign_from_name' value='{$wordchimp_campaign_from_name}' /></label><br /><br />
 		<label><strong>Default From E-mail:</strong><br /><input type='text' name='wordchimp_campaign_from_email' value='{$wordchimp_campaign_from_email}' /></label><br /><br />
 		<label><strong>Logo URL (includes http):</strong><br /><input type='text' name='wordchimp_logo_url' value='{$wordchimp_logo_url}' /></label><br /><br />
+		<label><input type='checkbox' name='wordchimp_use_excerpt' value='true' {$wordchimp_use_excerpt_checked} /> Use excerpts instead of the full post content for newsletter.</label><br /><br />
 		<label><input type='checkbox' name='wordchimp_strip_images' value='true' {$wordchimp_strip_images_checked} /> Strip images from posts (Fixes some compatibility issues with posts that have very large images)</label><br /><br />
 		<label><input type='checkbox' name='wordchimp_show_author' value='true' {$wordchimp_show_author_checked} /> Show author inside of post</label><br /><br />
 		<label><input type='checkbox' name='wordchimp_show_timestamp' value='true' {$wordchimp_show_timestamp_checked} /> Show post created date/time inside of post</label><br /><br />
@@ -379,10 +709,6 @@ EOF;
 
 				$opts['authenticate'] = true;
 				
-				if (get_option( 'google_analytics_key' ) != "") {
-					$opts['analytics'] = array('google' => get_option( 'google_analytics_key' ));
-				}
-				
 				$opts['title'] = $_POST['wordchimp_campaign_title'];
 				
 				// Time to generate the actual HTML of the e-mail
@@ -417,14 +743,19 @@ EOF;
 						$content['html'] .= "<small>Posted on: <em>{$post['formatted_post_date']}</em></small><br />";
 					}
 					
+					// Check to see if we're using an excerpt or the full post
+					$post_type = get_option( 'wordchimp_use_excerpt' ) == 'true' ? 'post_excerpt' : 'post_content';
+					
+					// Strip images if necessary
 					if (get_option( 'wordchimp_strip_images')) {
-						$post['post_content'] = preg_replace("/<img[^>]+\>/i", "", $post['post_content']);
+						$post[$post_type] = preg_replace("/<img[^>]+\>/i", "", $post[$post_type]);
 					}
 					
-					$content['html'] .= strip_shortcodes($post['post_content']) . "<br /><hr /><br />";
+					// Remove short codes and finalize html content
+					$content['html'] .= do_shortcode($post[$post_type]) . "<br /><hr /><br />";
 					
-					// Setup text email
-					$content['text'] .= strip_tags(strip_shortcodes($post['post_title'])) . "\r\n";
+					// Remove short codes and finalize text content
+					$content['text'] .= strip_tags(do_shortcode($post['post_title'])) . "\r\n";
 
 					if (get_option( 'wordchimp_show_author')) {
 						$content['text'] .= "Authored by: {$post['display_name']}\r\n";

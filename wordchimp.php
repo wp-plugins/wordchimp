@@ -3,7 +3,7 @@
 Plugin Name: WordChimp
 Plugin URI: http://hudsoncs.com/projects/wordchimp/
 Description: Allows you to easily select and send a group of posts as a MailChimp campaign
-Version: 1.6
+Version: 1.7
 Author: David Hudson
 Author URI: http://hudsoncs.com/
 License: GPL
@@ -189,7 +189,7 @@ EOF;
 							</tr>
 							<tr>
 								<td><span class='wordchimp_campaign_data_title'>Forwards opens:</span><br /><span class='wordchimp_campaign_data_value'>{$stats['forwards_opens']}</span></td>
-								<td><span class='wordchimp_campaign_data_title'>Opens:</span><br /><span class='wordchimp_campaign_data_value'>{$stats['opens']}</span></td>
+								<td><span class='wordchimp_campaign_data_title'>Unique Opens:</span><br /><span class='wordchimp_campaign_data_value'>{$stats['unique_opens']}</span></td>
 								<td><span class='wordchimp_campaign_data_title'>Last open:</span><br /><span class='wordchimp_campaign_data_value'>{$stats['last_open']}</span></td>
 								<td><span class='wordchimp_campaign_data_title'>Clicks:</span><br /><span class='wordchimp_campaign_data_value'>{$stats['clicks']}</span></td>
 								<td><span class='wordchimp_campaign_data_title'>Users who clicked:</span><br /><span class='wordchimp_campaign_data_value'>{$stats['users_who_clicked']}</span></td>
@@ -755,7 +755,7 @@ EOF;
 					$content['html'] .= do_shortcode($post[$post_type]) . "<br /><hr /><br />";
 					
 					// Remove short codes and finalize text content
-					$content['text'] .= strip_tags(do_shortcode($post['post_title'])) . "\r\n";
+					$content['text'] .= strip_tags($post['post_title']) . "\r\n";
 
 					if (get_option( 'wordchimp_show_author')) {
 						$content['text'] .= "Authored by: {$post['display_name']}\r\n";
@@ -771,7 +771,7 @@ EOF;
 						$content['text'] .= "Posted on: {$post['formatted_post_date']}\r\n";
 					}
 					
-					$content['text'] .= strip_tags($post['post_content']) . "\r\n\r\n----------------\r\n\r\n";
+					$content['text'] .= strip_tags(do_shortcode($post['post_content'])) . "\r\n\r\n----------------\r\n\r\n";
 					
 					// Setup HTML TOC
 					$table_of_contents['html'] .= "<li><a href='#{$post_id}'>{$post['post_title']}</a></li>";

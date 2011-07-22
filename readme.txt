@@ -2,9 +2,9 @@
 Contributors: hudsonfoo
 Donate link: http://hudsoncs.com/hudsoncs-news/projects/wordchimp/
 Tags: mailing list, newsletter, mailchimp
-Requires at least: 2.7
-Tested up to: 3.1.3
-Stable tag: 1.7
+Requires at least: 2.8
+Tested up to: 3.2.1
+Stable tag: 2.0
 
 Create and send MailChimp campaigns by selecting Wordpress posts directly from the Wordpress administrator backend.
 
@@ -24,6 +24,11 @@ If you love MailChimp and Wordpress, you're in luck. Now you can create and send
 For screen shots, check out http://hudsoncs.com/projects/wordchimp/
 
 == Changelog ==
+= 2.0 =
+* Completely new templating system. Uses your own custom MailChimp templates or you can choose from the MailChimp gallery. NOTE: Not all MailChimp gallery templates are 100% compatible. Repeatable sections are currently not supported.
+* Added ability to change order of posts.
+* Updated style to match (most) WordPress best practices.
+
 = 1.7 =
 * Fixed expanding of shortcodes in text content. (Thanks again @CPilko)
 * Changed statistics 'opens' to 'unique opens'. (Thanks again... again... @CPilko)

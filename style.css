@@ -3,36 +3,37 @@
 	clear:both;
 }
 
-#wordchimp_container {
-	padding: 0 .6em;
-	margin: 5px 15px 2px;
-	min-height:400px;
+#wordchimp_credits {
+	display:block;
+	clear:both;
+	margin:5px 0px;
+	font-weight:bold;
 }
 
-#wordchimp_container .mailchimp_connected {
-	position:absolute;
-	width:100px;
-	height:138px;
-	right:50px;
-	background-image:url(./images/mailchimp_connected.png);
-	background-position:top center;
-	background-repeat:no-repeat;
+#posts_listing ul li {
+	display:block;
+	margin-bottom:2px;
+	padding:5px;
+	overflow:hidden;
+	background-color:#f7f7f7;
+	font-weight:bold;
+	clear:both;
+	cursor:pointer;
 }
 
-#wordchimp_contents {
-	min-height:400px;
-	padding: .6em;
-	margin: 15px 15px 2px;
-	background-color:#fff;
-	border: 1px solid #ccc;
-}
-
-#wordchimp_footer {
-	padding: .6em;
-	margin: 15px 15px 2px;
-	background-color:#242424;
+#posts_listing ul li:hover {
+	background-color:#aaa;
 	color:#fff;
-	text-align:center;
+}
+
+#posts_used ul li {
+	padding:5px;
+	font-weight:bold;
+	cursor:pointer;
+}
+
+#posts_used ul li:hover {
+	background-color:#fcffce;
 }
 
 .wordchimp_campaigns_analytics_table {
@@ -68,13 +69,17 @@
 	text-align:left;
 }
 
-#wordchimp_contents input[type=text] {
+.wordchimp {
+	
+}
+
+.wordchimp input[type=text] {
 	width:500px;
 }
 
-#wordchimp_contents textarea {
-	width:700px;
-	height:300px;
+.wordchimp textarea {
+	width:100%;
+	height:200px;
 }
 
 .wordchimp_notice {
@@ -99,5 +104,32 @@
 	background-color:#dfffe4;
 	border: 1px solid #157a2c;
 	color:#157a2c;
+	text-align:center;
+}
+
+.wordchimp .template_select_box {
+	float:left;
+	margin:10px 20px 10px 0px;
+	padding:5px;
+	border:1px solid #ccc;
+	height:200px;
+	width:200px;
+	overflow:hidden;
+	cursor:pointer;
+}
+
+.wordchimp .template_select_box:hover {
+	border:1px solid #000;
+}
+
+.wordchimp .template_select_box img {
+	display:block;
+	max-width:180px;
+	margin:0px auto;
+}
+
+.wordchimp .template_select_box span {
+	display:block;
+	clear:both;
 	text-align:center;
 }
